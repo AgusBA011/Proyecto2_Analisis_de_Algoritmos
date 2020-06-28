@@ -11,6 +11,7 @@ import threading
 from Point import *
 
 import ray
+
 #-------------------------------------------------------------------------------------------------------------------------------
 #___________________________________________________PATH RACING__________________________________________________________________
 
@@ -26,12 +27,12 @@ def raytrace():
         #pixel color
         pixel = 0
 
-        #point = Point (100, 100)
         for source in sources:
 
             #calculates direction to light source
             
             dir = source-point
+
             #add jitter
             #dir.x += random.uniform(0, 25)
             #dir.y += random.uniform(0, 25)
@@ -39,17 +40,10 @@ def raytrace():
             #distance between point and light source
             length = ray.length(dir)
 
-            
-            free = True
-            for seg in segments:                
-                #check if ray intersects with segment
-                dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1])
-                #if intersection, or if intersection is closer than light source
-                if dist!=-1 and dist<length:
-                    free = False
-                    break
+            color = PathTraycing (dir, point, 0, source)
 
-            if free:        
+            if color != 0:
+
                 intensity = (1-(length/500))**2
                 #print(len)
                 #intensity = max(0, min(intensity, 255))
@@ -60,9 +54,76 @@ def raytrace():
                 #add all light sources 
                 pixel += values
             
+
             #average pixel value and assign
             px[int(point.x)][int(point.y)] = pixel // len(sources)
-            #return 0
+
+
+
+
+ #Queremos saber si hay una forma que el punto x sea intersecado por la luz. Ya sea directamente o por rebote.
+
+maxRebotes = 1
+
+def PathTraycing (dir, point, rebote, source):
+
+    if rebote >= maxRebotes:
+
+        #print("Rebotó demasiado")
+        return 0 
+
+    reboundPoint = Point(501,501)
+    free  = True
+
+    for seg in segments: # La idea es en vez de revisar todos los segmentos escoger el más cercano
+
+        length = ray.length(dir)
+
+        dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1]) #Compruebo si hay intersección 
+
+        if dist[0] !=-1 and dist[0] < length: #Hay rebote
+
+            #print("Rebotó en" + str(dist[1].__str__() ) )
+
+            dir = source - dist[1]
+
+            free = False
+
+            #Solo cambiarlo si es el punto intersecado es el más cercano al punto de todos los que han habido
+
+            if (  (dist[1].x - point.x) <= reboundPoint.x and (dist[1].y - point.y) <= reboundPoint.y):
+
+                reboundPoint = dist[1]
+
+        #else: #No hay rebote
+
+            
+
+            #print("Luz directa")
+
+
+    
+    if free == False:  
+
+        if (PathTraycing( dir, reboundPoint, rebote + 1, source) == 0):
+            return 0
+
+        #else:
+
+            #Sí rebota
+
+        #Se llama de nuevo a la función, pero con el punto origen es en donde rebotó
+        #Sin especularidad = Solo un rebote en una sola dirección 
+        
+
+    else: #La luz alcanza con éxito al punto aleatorio
+
+        return 1
+        #print("Alcanza la luz con éxito desde " + point.__str__() )
+
+
+        #Aquí irían los cálculos para el color del pixel o se retornaría el valor
+
 
 
 
@@ -183,7 +244,7 @@ while not done:
                 screen.blit(i_lighCircle,(mouse_x - 10,mouse_y - 10))
         '''
 
-        print(pygame.mouse.get_pos())
+        #print(pygame.mouse.get_pos())
 
         # Get a numpy array to display from the simulation
 

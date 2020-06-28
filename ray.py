@@ -12,7 +12,7 @@ def raySegmentIntersect(ori, dir, p1, p2):
     
 
     if (abs(dot) < 0.000001 or dot == 0): #Agregué que dot no puede ser 0 para que no se produzca un error
-        return -1.0
+        return [-1.0, Point(-1,-1)]
 
     u = v2.cross(v1) / dot
     t = v1.dot(v3) / dot
@@ -26,9 +26,9 @@ def raySegmentIntersect(ori, dir, p1, p2):
 
         #print(interX, interY)
         
-        return u
+        return [u , Point(interX, interY)]
 
-    return -1.0
+    return [-1.0, Point(-1,-1)]
 
 def length(v1):
     #assumes v1 starts at (0,0)

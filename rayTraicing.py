@@ -1,4 +1,3 @@
-
 import pygame
 import random
 import numpy as np 
@@ -16,6 +15,8 @@ import ray
 
 #--------------------------------------------------------------------------------------------------------------------------------
 
+mouse_x, mouse_y = 10, 10
+
 
 def raytrace():
     #Raytraces the scene progessively
@@ -26,6 +27,13 @@ def raytrace():
         #pixel color
         pixel = 0
 
+        sources = [Point(10,10)]
+        
+        if (pygame.mouse.get_pressed()[0] and sources[0].x == pygame.mouse.get_pos()[0] and
+            sources[0].y == pygame.mouse.get_pos()[1]):
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            sources = [ Point(mouse_x, mouse_y) ]
+        
         #point = Point (100, 100)
         for source in sources:
 
@@ -104,10 +112,9 @@ ref = np.array(im_file)
 
 #light positions
 
-sources = [ Point(459, 459) ]
 
 #light color
-light = np.array([1, 1, 0.75])
+light = np.array([0.5, 0.5, 0.75])
 #light = np.array([1, 1, 1])
 
 #warning, point order affects intersection test!!
@@ -117,10 +124,8 @@ light = np.array([1, 1, 0.75])
 
 
 segments = [
-                ([Point(355, 370), Point(397, 370)]),
                 ([Point(397, 370), Point(397, 412)]),
-                ([Point(397, 412), Point(355, 412)]),
-                ([Point(355,412), Point(355, 370)]),
+                ([Point(397, 412), Point(355, 412)])
             ]
 #Primeros cuatro puntos son un cuadrado verde
 
@@ -183,7 +188,7 @@ while not done:
                 screen.blit(i_lighCircle,(mouse_x - 10,mouse_y - 10))
         '''
 
-        print(pygame.mouse.get_pos())
+        #print(pygame.mouse.get_pos())
 
         # Get a numpy array to display from the simulation
 
@@ -195,11 +200,13 @@ while not done:
         surface = pygame.surfarray.make_surface(npimage)
         screen.blit(surface, (border, border))
 
-        screen.blit(i_lighCircle,(450,450))
+        if (pygame.mouse.get_pressed()[0]):
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+        screen.blit(i_lighCircle,(mouse_x-10, mouse_y-10))
 
 
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(10)
 
 
 #________________________________________________________________________________________________

@@ -1,4 +1,6 @@
 from Point import *
+import random
+import numpy as np 
 import math
 
 def raySegmentIntersect(ori, dir, p1, p2):
@@ -54,4 +56,77 @@ def cosAngle(a, b, ori):
 
     cos = v1.dot(v2)/(length(v1)*length(v2))
     return cos
+
+
+
+
+def pendienteLinea(a, b):
+
+    return (b.y - a.y)/(b.x - a.x)
+
+
+
+def newDirection(point, dir, segPointA, segPointB):
+
+
+    if (segPointA.x == segPointB.x): #Recta paralela al eje y, cuando no es posible calcular una pendiente
+
+        if dir.x < 0: #Negativo
+
+            #Viene por la derecha
+
+            return (  Point(random.uniform(point.x + 1, 500), random.uniform(0, 500)) - point  ) 
+
+
+        else: 
+
+            #Pos
+            #Viene por la izquierda
+            return ( Point(random.uniform(0, point.x - 1 ), random.uniform(0,500)) - point )
+
+
+
+    pendiente = pendienteLinea(segPointA, segPointB)
+
+    print(pendiente)
+
+    if (pendiente == 0): #Recta es paralela al eje x
+
+        if dir.y < 0: #Negativo
+
+            #Viene por arriba
+
+            return ( Point(random.uniform(0,500), random.uniform(0, point.y - 1 ))  - point )
+
+
+        else:
+
+            #Viene por abajo
+            return ( Point(random.uniform(0,500), random.uniform(point.y + 1, 500)) - point )   
+
+    else: #La recta no es ni vertical ni horizontal
+
+        segmentChose = segPointA #Hay que verificar si al escoger alguno de los dos segmentos no de error
+
+        loop = False
+
+        while loop == False:
+
+            randomPoint = Point( random.randint(0,500), random.randint(0,500))
+    
+            angulo = np.arccos( cosAngle((randomPoint - point) , segmentChose, point) )
+
+            #print (randomPoint , math.degrees(angulo))
+
+            if math.degrees(angulo) <= 180 and math.degrees(angulo) >= 0:
+
+                return (randomPoint - point)
+
+
+
+
+
+
+
+
 

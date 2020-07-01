@@ -1,3 +1,4 @@
+
 import pygame
 import random
 import numpy as np 
@@ -12,11 +13,10 @@ from Point import *
 import ray
 
 #-------------------------------------------------------------------------------------------------------------------------------
-#___________________________________________________PATH TRACING__________________________________________________________________
+#___________________________________________________PATH RACING__________________________________________________________________
 
 #--------------------------------------------------------------------------------------------------------------------------------
 
-mouse_x, mouse_y = 10, 10
 
 def raytrace():
     #Raytraces the scene progessively
@@ -26,15 +26,6 @@ def raytrace():
         point = Point(random.uniform(0, 500), random.uniform(0, 500))
         #pixel color
         pixel = 0
-        
-        #light positions
-        sources = [Point(10,10)]
-        
-        if (pygame.mouse.get_pressed()[0] and sources[0].x == pygame.mouse.get_pos()[0] and
-            sources[0].y == pygame.mouse.get_pos()[1]):
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            sources = [ Point(mouse_x, mouse_y) ]
-
 
         for source in sources:
 
@@ -70,71 +61,113 @@ def raytrace():
 
 
 
- #Queremos saber si hay una forma que el punto x sea intersecado por la luz. Ya sea directamente o por rebote.
 
-maxRebotes = 1
+#Función que se le da un punto de origen y una dirección, y comprueba si esta interseca con algún segmento en pantalla
 
-def PathTraycing (dir, point, rebote, source):
+def checkIntersection(point, dir, source):
 
-    if rebote >= maxRebotes:
+    reboundPoint = Point(501,501)
+
+    free = True
+
+    segWhereRebound = 0
+
+
+    for seg in segments: # La idea es en vez de revisar todos los segmentos escoger el más cercano
+
+            length = ray.length(dir)
+
+            dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1]) #Compruebo si hay intersección 
+
+            if dist[0] !=-1 and dist[0] < length: #Hay rebote
+
+                #print("Rebotó en" + str(dist[1].__str__() ) )
+
+                dir = source - dist[1]
+
+                free = False
+
+                #Solo cambiarlo si es el punto intersecado es el más cercano al punto de todos los que han habido
+
+                if (  (dist[1].x - point.x) <= reboundPoint.x and (dist[1].y - point.y) <= reboundPoint.y):
+
+                    reboundPoint = dist[1]
+
+                    segWhereRebound = seg
+
+
+    if free == False:
+
+        return [True, reboundPoint, segWhereRebound] #Choca con un segmento, por ende hay que devolver que sí chocó y en dónde.
+
+    else:
+
+        return [False, 0, 0] #En caso opuesto, el rayo no choca.
+
+
+
+maxRebotes = 2 #Variable global que define la cantidad de rebotes permitidos por los rayos
+
+newRaysLimit = 5 #Variable que controla la cantidad de nuevos rays que se crean
+
+def PathTraycing (dir, point, rebotes, source):  #Queremos saber si hay una forma que el punto x sea intersecado por la luz. Ya sea directamente o por rebote.
+
+    if rebotes >= maxRebotes:
 
         #print("Rebotó demasiado")
         return 0 
 
-    reboundPoint = Point(501,501)
-    free  = True
 
-    for seg in segments: # La idea es en vez de revisar todos los segmentos escoger el más cercano
+    #Hay contacto con la luz
 
-        length = ray.length(dir)
+    checkLuz = checkIntersection(point, source - point, source)
 
-        dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1]) #Compruebo si hay intersección 
+    if (checkLuz[0] == False): #No hay choque con un segmento en dirección a la luz, por lo que por medio de un rebote logró llegar
 
-        if dist[0] !=-1 and dist[0] < length: #Hay rebote
-
-            #print("Rebotó en" + str(dist[1].__str__() ) )
-
-            dir = source - dist[1]
-
-            free = False
-
-            #Solo cambiarlo si es el punto intersecado es el más cercano al punto de todos los que han habido
-
-            if (  (dist[1].x - point.x) <= reboundPoint.x and (dist[1].y - point.y) <= reboundPoint.y):
-
-                reboundPoint = dist[1]
-
-        #else: #No hay rebote
-
-            
-
-            #print("Luz directa")
-
-
-    
-    if free == False:  
-
-        if (PathTraycing( dir, reboundPoint, rebote + 1, source) == 0):
-            return 0
-
-        #else:
-
-            #Sí rebota
-
-        #Se llama de nuevo a la función, pero con el punto origen es en donde rebotó
-        #Sin especularidad = Solo un rebote en una sola dirección 
-        
-
-    else: #La luz alcanza con éxito al punto aleatorio
+        #print("Alcanzó la luz")
 
         return 1
-        #print("Alcanza la luz con éxito desde " + point.__str__() )
+
+    if (rebotes == 0): #Primer rayo
+
+        newRay = 0
+
+        limit = 0
+
+        if especularidad == False:
+
+            while newRay == 0  and limit != newRaysLimit : #Se crean nuevos rayos
+
+                limit += limit
+
+                newDir = ray.newDirection( point, dir, Point(0,0) , Point(0,0) )
+
+                newRay = PathTraycing ( checkLuz[1], newDir, rebotes + 1, source)
+
+            # Luz = S, A punto de superficie. Si S < A, nuevos V no pueden ser mayores que 
 
 
-        #Aquí irían los cálculos para el color del pixel o se retornaría el valor
+        else:
+
+            #Hacer el rebote perfecto
+
+            dir = (-dir.x, -dir.y)
+
+            newRay = PathTraycing ( dir, checkLuz[1], rebotes + 1, source)
 
 
+        if limit >= 5: #Ninguno de los rayos llegó a la luz
 
+            return 0
+
+        else: #Se retorna el rayo que logró llegar
+
+            return newRay
+
+    return 0
+
+
+#En caso de que queramos agregar más rebotes hay que hacerlo diferente
 
 #_______________________________________________________________________________________________________________________
 
@@ -171,6 +204,17 @@ px = np.array(i)
 
 im_file = Image.open("fondo.png")
 ref = np.array(im_file)
+
+
+#Variables Importantes
+
+especularidad = True
+
+
+
+#light positions
+
+sources = [ Point(459, 459) ]
 
 #light color
 light = np.array([1, 1, 0.75])
@@ -261,13 +305,11 @@ while not done:
         surface = pygame.surfarray.make_surface(npimage)
         screen.blit(surface, (border, border))
 
-        if (pygame.mouse.get_pressed()[0]):
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-        screen.blit(i_lighCircle,(mouse_x-10, mouse_y-10))
+        screen.blit(i_lighCircle,(450,450))
 
 
         pygame.display.flip()
-        clock.tick(10)
+        clock.tick(60)
 
 
 #________________________________________________________________________________________________

@@ -72,14 +72,14 @@ def newDirection(point, dir, segPointA, segPointB):
 
             #Viene por la derecha
 
-            return (  Point(random.uniform(point.x + 1, 500), random.uniform(0, 500)) - point  ) 
+            return (  Point(random.uniform(point.x + 1, 691), random.uniform(0, 691)) - point  ) 
 
 
         else: 
 
             #Pos
             #Viene por la izquierda
-            return ( Point(random.uniform(0, point.x - 1 ), random.uniform(0,500)) - point )
+            return ( Point(random.uniform(0, point.x - 1 ), random.uniform(0,691)) - point )
 
 
 
@@ -94,13 +94,13 @@ def newDirection(point, dir, segPointA, segPointB):
 
             #Viene por arriba
 
-            return ( Point(random.uniform(0,500), random.uniform(0, point.y - 1 ))  - point )
+            return ( Point(random.uniform(0,691), random.uniform(0, point.y - 1 ))  - point )
 
 
         else:
 
             #Viene por abajo
-            return ( Point(random.uniform(0,500), random.uniform(point.y + 1, 500)) - point )   
+            return ( Point(random.uniform(0,691), random.uniform(point.y + 1, 691)) - point )   
 
     else: #La recta no es ni vertical ni horizontal
 
@@ -110,7 +110,7 @@ def newDirection(point, dir, segPointA, segPointB):
 
         while loop == False:
 
-            randomPoint = Point( random.randint(0,500), random.randint(0,500))
+            randomPoint = Point( random.randint(0,691), random.randint(0,691))
     
             angulo = np.arccos( cosAngle((randomPoint - point) , segmentChose, point) )
 

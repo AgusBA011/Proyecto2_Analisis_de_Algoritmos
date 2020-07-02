@@ -12,7 +12,6 @@ def raySegmentIntersect(ori, dir, p1, p2):
 
     dot = v2.dot(v3)
     
-
     if (abs(dot) < 0.000001 or dot == 0): #Agregué que dot no puede ser 0 para que no se produzca un error
         return [-1.0, Point(-1,-1)]
 
@@ -58,8 +57,6 @@ def cosAngle(a, b, ori):
     return cos
 
 
-
-
 def pendienteLinea(a, b):
 
     return (b.y - a.y)/(b.x - a.x)
@@ -88,9 +85,10 @@ def newDirection(point, dir, segPointA, segPointB):
 
     pendiente = pendienteLinea(segPointA, segPointB)
 
-    print(pendiente)
+    #print(pendiente)
 
     if (pendiente == 0): #Recta es paralela al eje x
+     
 
         if dir.y < 0: #Negativo
 
@@ -124,9 +122,24 @@ def newDirection(point, dir, segPointA, segPointB):
 
 
 
+def rayCircleIntersection ( ori, dir, posC, r):
 
 
+    v1 = posC - ori #Se crea un vector con la dirección del punto aleatorio hacia el centro del círculo
+
+    R = v1.dot(dir)/(lenght(dir)**2) #Punto más cercano al centro del círculo
+
+    closest = Point(R*dir.x, R*dir.y) + ori
 
 
+    b = lenght(posC - closest) #Distancia desde el centro al punto más cercano
 
 
+    if b>r: #Si b es mayor que el radio significa que no hay intersección
+
+        return -1
+
+
+    h = math.sqrt(r*r - b*b) #uno de los catetos del triángulo
+
+    return (R-h, R+h)  #Se retornan dos distancias

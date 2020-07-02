@@ -22,10 +22,14 @@ def raytrace():
     #Raytraces the scene progessively
 
     while True:
-        #random point in the image
+
+        #MONTE CARLO
+
         point = Point(random.uniform(0, 500), random.uniform(0, 500))
-        #pixel color
-        pixel = 0
+
+    
+        pixel = 0 #pixel color
+
 
         for source in sources:
 
@@ -33,32 +37,43 @@ def raytrace():
             
             dir = source-point
 
+            length = ray.length(dir)
+
             #add jitter
             #dir.x += random.uniform(0, 25)
             #dir.y += random.uniform(0, 25)
 
-            #distance between point and light source
-            length = ray.length(dir)
-
             color = PathTraycing (dir, point, 0, source)
 
-            if color != 0:
 
-                intensity = (1-(length/500))**2
-                #print(len)
-                #intensity = max(0, min(intensity, 255))
-                values = (ref[int(point.y)][int(point.x)])[:3]
-                #combine color, light source and light color
-                values = values * intensity * light
-                
-                #add all light sources 
+            if color[0] != 0:
+
+                if color[2] > 0: #Luz directa sin rebotes
+
+                    intensity = (1-(length/500))**2
+
+                    values = (ref[int(point.y)][int(point.x)])[:3]
+
+                    values = values * intensity * light
+
+
+                else: #Luz con rebota
+
+                    intensity = ((1-(length/500))**2)
+
+                    colorSegmento = (ref[int(color[1].y)][int(color[1].x)])[:3]
+
+                    #values = (ref[int(point.y)][int(point.x)])[:3]
+
+                    values = colorSegmento * intensity * light
+
+                    print(colorSegmento)
+
                 pixel += values
-            
+
 
             #average pixel value and assign
             px[int(point.x)][int(point.y)] = pixel // len(sources)
-
-
 
 
 
@@ -66,24 +81,24 @@ def raytrace():
 
 def checkIntersection(point, dir, source):
 
-    reboundPoint = Point(501,501)
+    reboundPoint = Point(501,501) #Punto considerado como infinito, se va a reemplazar
 
     free = True
 
     segWhereRebound = 0
 
+    length = ray.length(dir)
+
+    length2 = ray.length(ray.normalize(dir))
 
     for seg in segments: # La idea es en vez de revisar todos los segmentos escoger el más cercano
 
-            length = ray.length(dir)
-
+            
             dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1]) #Compruebo si hay intersección 
 
-            if dist[0] !=-1 and dist[0] < length: #Hay rebote
+            if dist[0] !=-1 and dist[0] < length2: #Hay rebote
 
                 #print("Rebotó en" + str(dist[1].__str__() ) )
-
-                dir = source - dist[1]
 
                 free = False
 
@@ -91,7 +106,7 @@ def checkIntersection(point, dir, source):
 
                 if (  (dist[1].x - point.x) <= reboundPoint.x and (dist[1].y - point.y) <= reboundPoint.y):
 
-                    reboundPoint = dist[1]
+                    reboundPoint = dist[1] 
 
                     segWhereRebound = seg
 
@@ -105,17 +120,13 @@ def checkIntersection(point, dir, source):
         return [False, 0, 0] #En caso opuesto, el rayo no choca.
 
 
-
-maxRebotes = 2 #Variable global que define la cantidad de rebotes permitidos por los rayos
-
-newRaysLimit = 5 #Variable que controla la cantidad de nuevos rays que se crean
-
 def PathTraycing (dir, point, rebotes, source):  #Queremos saber si hay una forma que el punto x sea intersecado por la luz. Ya sea directamente o por rebote.
 
     if rebotes >= maxRebotes:
 
         #print("Rebotó demasiado")
-        return 0 
+
+        return [0] # Pixel negro
 
 
     #Hay contacto con la luz
@@ -126,45 +137,50 @@ def PathTraycing (dir, point, rebotes, source):  #Queremos saber si hay una form
 
         #print("Alcanzó la luz")
 
-        return 1
+
+        return [1, point, rebotes]
 
     if (rebotes == 0): #Primer rayo
 
-        newRay = 0
+        newRay = [0]
 
         limit = 0
 
-        if especularidad == False:
+        if especularidad == False: # SIn especularidad
 
-            while newRay == 0  and limit != newRaysLimit : #Se crean nuevos rayos
+            while newRay == 0  and limit >= newRaysLimit : #Se crean nuevos rayos
 
                 limit += limit
 
-                newDir = ray.newDirection( point, dir, Point(0,0) , Point(0,0) )
+                newDir = ray.newDirection( point, dir, checkLuz[2][0], checkLuz[2][1])
 
                 newRay = PathTraycing ( checkLuz[1], newDir, rebotes + 1, source)
 
-            # Luz = S, A punto de superficie. Si S < A, nuevos V no pueden ser mayores que 
+                #print(newRay)
 
 
-        else:
+            if limit >= newRaysLimit: #Ninguno de los rayos llegó a la luz
+
+                                            #print ("Los rayos fallaron")
+                return [0] # Pixel negro
+
+            elif (len(newRay) > 1): #Un rayo logró llegar, por ende sí se illumina
+
+                #Hay que mandar cuántos rebotes realizó, el color de que recibirá y el color bleeding
+
+                return [1, checkLuz[1], rebotes]
+
+
+        else: #Con especularidad
 
             #Hacer el rebote perfecto
 
             dir = (-dir.x, -dir.y)
 
-            newRay = PathTraycing ( dir, checkLuz[1], rebotes + 1, source)
+            newRay = PathTraycing ( dir, checkLuz[1], rebotes + 1, source) #Nuevo rayo en una dirección reflejada
 
 
-        if limit >= 5: #Ninguno de los rayos llegó a la luz
-
-            return 0
-
-        else: #Se retorna el rayo que logró llegar
-
-            return newRay
-
-    return 0
+    return [0] #Pixel negro
 
 
 #En caso de que queramos agregar más rebotes hay que hacerlo diferente
@@ -188,7 +204,6 @@ pygame.init()
 screen = pygame.display.set_mode((w, h))
 pygame.display.set_caption("2D Path Tracing")
 
-
 done = False
 clock = pygame.time.Clock()
 
@@ -206,21 +221,22 @@ im_file = Image.open("fondo.png")
 ref = np.array(im_file)
 
 
-#Variables Importantes
+#_____________________________________VARIABLES GLOBALES QUE SE PUEDEN CAMBIAR_______________________________________________________
 
-especularidad = True
+especularidad = False
+
+maxRebotes = 2 #Variable global que define la cantidad de rebotes permitidos por los rayos
+
+newRaysLimit = 1 #Variable que controla la cantidad de nuevos rays que se crean
 
 
+sources = [ Point(459, 459) ] #Posiciones de la luz
 
-#light positions
 
-sources = [ Point(459, 459) ]
-
-#light color
-light = np.array([1, 1, 0.75])
+light = np.array([1, 1, 0.75]) #Color de la luz
 #light = np.array([1, 1, 1])
 
-#warning, point order affects intersection test!!
+
 
 
 #___________________________________GEOMETRY_______________________________________________________
@@ -232,7 +248,9 @@ segments = [
                 ([Point(397, 412), Point(355, 412)]),
                 ([Point(355,412), Point(355, 370)]),
             ]
-#Primeros cuatro puntos son un cuadrado verde
+
+
+
 
 #________________________________________________________________________________________________
 
@@ -280,7 +298,7 @@ while not done:
 
         # Clear screen to black before drawing 
 
-        screen.fill((0, 0, 0))
+        screen.fill((255, 255, 255))
         
         #screen.blit(img_fondo,(border,border))
 

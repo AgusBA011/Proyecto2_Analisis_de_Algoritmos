@@ -3,6 +3,11 @@ import random
 import numpy as np 
 import math
 
+
+
+w,h = 500, 500
+
+
 def raySegmentIntersect(ori, dir, p1, p2):
 
     #calculate vectors
@@ -34,6 +39,11 @@ def raySegmentIntersect(ori, dir, p1, p2):
 def length(v1):
     #assumes v1 starts at (0,0)
     return math.sqrt(v1.x*v1.x + v1.y*v1.y)
+
+def distanceBetweenPoints(pointA, pointB):
+
+    return math.sqrt( (pointB.x - pointA.x)**2 + (pointB.y - pointA.y)**2 )
+
 
 
 def normalize(v1):
@@ -72,14 +82,14 @@ def newDirection(point, dir, segPointA, segPointB):
 
             #Viene por la derecha
 
-            return (  Point(random.uniform(point.x + 1, 691), random.uniform(0, 691)) - point  ) 
+            return (  normalize(Point(random.uniform(point.x + 1, w), random.uniform(0, w)) - point)  ) 
 
 
         else: 
 
             #Pos
             #Viene por la izquierda
-            return ( Point(random.uniform(0, point.x - 1 ), random.uniform(0,691)) - point )
+            return ( normalize(Point(random.uniform(0, point.x - 1 ), random.uniform(0,w)) - point) )
 
 
 
@@ -94,31 +104,31 @@ def newDirection(point, dir, segPointA, segPointB):
 
             #Viene por arriba
 
-            return ( Point(random.uniform(0,691), random.uniform(0, point.y - 1 ))  - point )
+            return ( normalize(Point(random.uniform(0,w), random.uniform(0, point.y - 1 ))  - point ) )
 
 
         else:
 
             #Viene por abajo
-            return ( Point(random.uniform(0,691), random.uniform(point.y + 1, 691)) - point )   
+            return ( normalize(Point(random.uniform(0,w), random.uniform(point.y + 1, w)) - point) )   
 
     else: #La recta no es ni vertical ni horizontal
 
-        segmentChose = segPointA #Hay que verificar si al escoger alguno de los dos segmentos no de error
+        segmentChose = segPointB #Hay que verificar si al escoger alguno de los dos segmentos no de error
 
         loop = False
 
         while loop == False:
 
-            randomPoint = Point( random.randint(0,691), random.randint(0,691))
+            randomPoint = Point( random.randint(0,w), random.randint(0,w))
     
-            angulo = np.arccos( cosAngle((randomPoint - point) , segmentChose, point) )
+            angulo = np.arccos( cosAngle((randomPoint - point) , segmentChose - point, point) )
 
             #print (randomPoint , math.degrees(angulo))
 
-            if math.degrees(angulo) <= 180 and math.degrees(angulo) >= 0:
+            if math.degrees(angulo) <= 90.0 and math.degrees(angulo) >= 0.0:
 
-                return (randomPoint - point)
+                return normalize(randomPoint - point)
 
 
 
@@ -127,12 +137,12 @@ def rayCircleIntersection ( ori, dir, posC, r):
 
     v1 = posC - ori #Se crea un vector con la dirección del punto aleatorio hacia el centro del círculo
 
-    R = v1.dot(dir)/(lenght(dir)**2) #Punto más cercano al centro del círculo
+    R = v1.dot(dir)/(length(dir)**2) #Punto más cercano al centro del círculo
 
     closest = Point(R*dir.x, R*dir.y) + ori
 
 
-    b = lenght(posC - closest) #Distancia desde el centro al punto más cercano
+    b = length(posC - closest) #Distancia desde el centro al punto más cercano
 
 
     if b>r: #Si b es mayor que el radio significa que no hay intersección
@@ -143,3 +153,65 @@ def rayCircleIntersection ( ori, dir, posC, r):
     h = math.sqrt(r*r - b*b) #uno de los catetos del triángulo
 
     return (R-h, R+h)  #Se retornan dos distancias
+
+
+
+def movePoint(segPointA, segPointB, dir, point):
+
+
+    if (segPointA.x == segPointB.x): #Recta paralela al eje y, cuando no es posible calcular una pendiente
+
+        if dir.x < 0: #Negativo
+
+            #Viene por la derecha
+
+            point.x = point.x + 1.5
+
+            return point
+
+
+        else: 
+
+            #Pos
+            #Viene por la izquierda
+
+            point.x = point.x - 1.5
+
+            return point
+
+
+
+    pendiente = pendienteLinea(segPointA, segPointB)
+
+    #print(pendiente)
+
+    if (pendiente == 0): #Recta es paralela al eje x
+     
+
+        if dir.y < 0: #Negativo
+
+            #Viene por arriba
+
+            point.y = point.y + 1.5
+
+            return point
+
+
+        else:
+
+            #Viene por abajo
+            point.y = point.y - 1.5
+
+            return point  
+
+
+
+
+def BDRF (point, dir):
+
+
+    cos_theta = 0
+
+
+
+

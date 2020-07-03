@@ -35,45 +35,50 @@ def raytrace():
 
             #calculates direction to light source
             
+            
+
             dir = source-point
 
             length = ray.length(dir)
 
-            #add jitter
-            #dir.x += random.uniform(0, 25)
-            #dir.y += random.uniform(0, 25)
 
-            color = PathTraycing (dir, point, 0, source)
+            if ray.distanceBetweenPoints(point, source) <= radioDeIlluminacion:
 
+                #add jitter
+                #dir.x += random.uniform(0, 25)
+                #dir.y += random.uniform(0, 25)
 
-            if color[0] != 0:
-
-                if color[2] > 0: #Luz directa sin rebotes
-
-                    intensity = (1-(length/w))**2
-
-                    values = (ref[int(point.y)][int(point.x)])[:3]
-
-                    values = values * intensity * light
+                color = PathTraycing (dir, point, 0, source)
 
 
-                else: #Luz con rebota
+                if color[0] != 0:
 
-                    intensity = ((1-(length/w))**2)
+                    if color[2] > 0: #Luz directa sin rebotes
 
-                    colorSegmento = (ref[int(color[1].y)][int(color[1].x)])[:3]
+                        intensity = (1-(length/w))**2
 
-                    #values = (ref[int(point.y)][int(point.x)])[:3]
+                        values = (ref[int(point.y)][int(point.x)])[:3]
 
-                    values = colorSegmento * intensity * light
-
-                    #print(colorSegmento)
-
-                pixel += values
+                        values = values * intensity * light
 
 
-            #average pixel value and assign
-            px[int(point.x)][int(point.y)] = pixel // len(sources)
+                    else: #Luz con rebota
+
+                        intensity = ((1-(length/w))**2)
+
+                        colorSegmento = (ref[int(color[1].y)][int(color[1].x)])[:3]
+
+                        values = (ref[int(point.y)][int(point.x)])[:3]
+
+                        values = colorSegmento * intensity * light
+
+                        print(colorSegmento)
+
+                    pixel += values
+
+
+                #average pixel value and assign
+                px[int(point.x)][int(point.y)] = pixel // len(sources)
 
 
 
@@ -93,7 +98,7 @@ def checkIntersection(point, dir, source):
 
     for seg in segments: # La idea es en vez de revisar todos los segmentos escoger el más cercano
 
-            #if (ray.length(seg[0]  - point) <= 400 and ray.length(seg[1]  - point) <= 400 ):
+            if (ray.length(seg[0]  - point) <= 350 and ray.length(seg[1]  - point) <= 350 ): #Radio de illuminación
 
 
                 dist = ray.raySegmentIntersect(point, dir, seg[0],seg[1]) #Compruebo si hay intersección 
@@ -117,23 +122,28 @@ def checkIntersection(point, dir, source):
 
         return [True, reboundPoint, segWhereRebound] #Choca con un segmento, por ende hay que devolver que sí chocó y en dónde.
 
+        #print(reboundPoint)
+
+
     else:
 
         return [False, 0, 0] #En caso opuesto, el rayo no choca.
 
 
 def PathTraycing (dir, point, rebotes, source):  #Queremos saber si hay una forma que el punto x sea intersecado por la luz. Ya sea directamente o por rebote.
-
+    '''
     if rebotes >= maxRebotes:
 
         #print("Rebotó demasiado")
 
         return [0] # Pixel negro
-
+    '''
 
     #Hay contacto con la luz
 
     checkLuz = checkIntersection(point, source - point, source)
+
+    #print(checkLuz[1])
 
     if (checkLuz[0] == False): #No hay choque con un segmento en dirección a la luz, por lo que por medio de un rebote logró llegar
 
@@ -148,29 +158,32 @@ def PathTraycing (dir, point, rebotes, source):  #Queremos saber si hay una form
 
         limit = 0
 
+
         if especularidad == False: # SIn especularidad
 
-            while newRay == 0  and limit >= newRaysLimit : #Se crean nuevos rayos
+            while newRay[0] == 0  and limit <= newRaysLimit : #Se crean nuevos rayos
 
-                limit += limit
+                limit += 1
 
                 newDir = ray.newDirection( point, dir, checkLuz[2][0], checkLuz[2][1])
 
-                newRay = PathTraycing ( checkLuz[1], newDir, rebotes + 1, source)
+                newRay = PathTraycing ( newDir, checkLuz[1], rebotes + 1, source)
 
-                #print(newRay)
+                #print(limit) #[ 1 o 0, punto, rebotes]
 
 
             if limit >= newRaysLimit: #Ninguno de los rayos llegó a la luz
 
-                                            #print ("Los rayos fallaron")
+                #print ("Los rayos fallaron")
                 return [0] # Pixel negro
 
             elif (len(newRay) > 1): #Un rayo logró llegar, por ende sí se illumina
 
                 #Hay que mandar cuántos rebotes realizó, el color de que recibirá y el color bleeding
 
-                return [1, checkLuz[1], rebotes]
+                #print ("Rayo llegó")
+
+                return [1, checkLuz[1], rebotes + 1]
 
 
         else: #Con especularidad
@@ -229,16 +242,20 @@ especularidad = False
 
 maxRebotes = 2 #Variable global que define la cantidad de rebotes permitidos por los rayos
 
-newRaysLimit = 1 #Variable que controla la cantidad de nuevos rays que se crean
+newRaysLimit = 5 #Variable que controla la cantidad de nuevos rays que se crean
+
+
+radioDeIlluminacion = 250
+
 
 #Posiciones de la luz
 
 
 sources = [ Point(96, 113),  #Cocina
 
-            #Point(97, 268),  #Hab1
+            #Point(97, 268),  #MainRoom
 
-            #Point(626, 39), #mainRoom
+            #Point(626, 39), #Hab1
 
             #Point(42, 468), #mainRoom
 
@@ -443,8 +460,7 @@ while not done:
         screen.fill((255, 255, 255))
         
         #screen.blit(img_fondo,(border,border))
-
-        
+   
 
         '''
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -469,7 +485,7 @@ while not done:
 
 
         pygame.display.flip()
-        clock.tick(10)
+        clock.tick(30)
 
 
 #________________________________________________________________________________________________

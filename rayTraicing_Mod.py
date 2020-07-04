@@ -5,6 +5,7 @@ from PIL import Image
 
 import math
 import threading
+import timeit
 
 #Clases and files
 from Point import *
@@ -19,12 +20,13 @@ import ray
 
 def raytrace(luces):
     #Raytraces the scene progessively
-
+    
+    
     sources = luces;
     while True:
 
         #MONTE CARLO
-
+        start = timeit.default_timer() #Registra el tiempo cuando se cálcula un píxel
         point = Point(random.uniform(0, w), random.uniform(0, h))
 
     
@@ -66,6 +68,8 @@ def raytrace(luces):
                     #average pixel value and assign
                     px[int(point.x)][int(point.y)] = pixel // len(sources)
 
+        stop = timeit.default_timer() # Registra el tiempo cuando finalizan los cálculos de un píxel.
+        print('Time (s): ', (stop - start)*1000) #Imprime el tiempo de cálculo para un píxel
 
 
 #Función que se le da un punto de origen y una dirección, y comprueba si esta interseca con algún segmento en pantalla
@@ -252,9 +256,9 @@ fuentes = list()
 
 fuentes.append(sourcesCocina)
 fuentes.append(sourcesMainRoom)
-fuentes.append(sourcesHab1)
-fuentes.append(sourcesHabPeque)
-fuentes.append(sourcesHab2)
+#fuentes.append(sourcesHab1)
+#fuentes.append(sourcesHabPeque)
+#fuentes.append(sourcesHab2)
 
 #Tienen el siguiente orden: Cocina, Hab1, Mainroom, Mainroom, HabPeque, 
 
@@ -280,7 +284,6 @@ segmentsHallway = [
                     ([Point(236, 225), Point(492, 225)]),
                     ([Point(492, 225), Point(513, 202)]),
                     ([Point(513, 202), Point(513, 133)]),
-
                   ]
 
 
@@ -333,7 +336,6 @@ segmentsMainRoom = [
 
 
 segmentsHap2 = [
-
                         ([Point(320, 375), Point(357, 240)]),
                         ([Point(357, 240), Point(644, 240)]),
                         ([Point(644, 240), Point(678, 276)]),
@@ -350,28 +352,14 @@ segments = segmentsKitchen + segmentsHallway + segmentsHabitacion1 + segmentsHab
 #_____________________________________THREADING__________________________________________________
 
 for fuente in fuentes:
-    print("Iniciando hilo")
+    #print("Iniciando hilo")
     t = threading.Thread(target = raytrace, args=(fuente,) ) # f being the function that tells how the ball should move
-    print("paso 2")
+    #print("paso 2")
     t.setDaemon(True) # Alternatively, you can use "t.daemon = True"
-    print("paso 3")
+    #print("paso 3")
     t.start()
-    print("Hilo iniciado con éxito")
+    #print("Hilo iniciado con éxito")
 
-#________________________________________________________________________________________________
-
-#Lo agregué yo
-fondo="imagen_casa_691x691.jpg"
-img_fondo= pygame.image.load(fondo)
-                
-img_fondo = pygame.transform.scale(img_fondo,(h,w))
-
-lightCircle = "Light Circle.png"
-i_lighCircle = pygame.image.load(lightCircle)
-
-i_lighCircle = pygame.transform.scale(i_lighCircle,(20,20))     
-        
-#Termina lo que agregué
 
 #________________________________________MAIN LOOP__________________________________________________
 
@@ -386,14 +374,6 @@ while not done:
         screen.fill((255, 255, 255))
         
         #screen.blit(img_fondo,(border,border))
-   
-
-        '''
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        if mouse_x >= 59 and mouse_x <= 540 and mouse_y >= 61 and mouse_y <= 540:
-                
-                screen.blit(i_lighCircle,(mouse_x - 10,mouse_y - 10))
-        '''
 
         #print(pygame.mouse.get_pos())
 

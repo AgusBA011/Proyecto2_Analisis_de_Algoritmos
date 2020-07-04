@@ -3,10 +3,7 @@ import random
 import numpy as np 
 import math
 
-
-
-w,h = 500, 500
-
+w,h = 691, 691
 
 def raySegmentIntersect(ori, dir, p1, p2):
 

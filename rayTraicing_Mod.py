@@ -1,4 +1,3 @@
-
 import pygame
 import random
 import numpy as np 
@@ -18,9 +17,10 @@ import ray
 #--------------------------------------------------------------------------------------------------------------------------------
 
 
-def raytrace():
+def raytrace(luces):
     #Raytraces the scene progessively
 
+    sources = luces;
     while True:
 
         #MONTE CARLO
@@ -35,50 +35,36 @@ def raytrace():
 
             #calculates direction to light source
             
-            
-
             dir = source-point
 
             length = ray.length(dir)
+            intensity = (1-(length/h))**2
+            #print(intensity)
+
+            if intensity>0:
+
+                if ray.distanceBetweenPoints(point, source) <= radioDeIlluminacion:
+
+                    color = PathTraycing (dir, point, 0, source)
+
+                    if color[0] != 0:
+
+                        if color[2] > 0: #Luz directa sin rebotes
+
+                            values = (ref[int(point.y)][int(point.x)])[:3]
+                            #print(values)
+                            values = values * intensity * light
+
+                        else: #Luz con rebota
+
+                            colorSegmento = (ref[int(color[1].y)][int(color[1].x)])[:3]
+                            values = colorSegmento * intensity * light
+
+                        pixel += values
 
 
-            if ray.distanceBetweenPoints(point, source) <= radioDeIlluminacion:
-
-                #add jitter
-                #dir.x += random.uniform(0, 25)
-                #dir.y += random.uniform(0, 25)
-
-                color = PathTraycing (dir, point, 0, source)
-
-
-                if color[0] != 0:
-
-                    if color[2] > 0: #Luz directa sin rebotes
-
-                        intensity = (1-(length/w))**2
-
-                        values = (ref[int(point.y)][int(point.x)])[:3]
-
-                        values = values * intensity * light
-
-
-                    else: #Luz con rebota
-
-                        intensity = ((1-(length/w))**2)
-
-                        colorSegmento = (ref[int(color[1].y)][int(color[1].x)])[:3]
-
-                        values = (ref[int(point.y)][int(point.x)])[:3]
-
-                        values = colorSegmento * intensity * light
-
-                        print(colorSegmento)
-
-                    pixel += values
-
-
-                #average pixel value and assign
-                px[int(point.x)][int(point.y)] = pixel // len(sources)
+                    #average pixel value and assign
+                    px[int(point.x)][int(point.y)] = pixel // len(sources)
 
 
 
@@ -86,7 +72,7 @@ def raytrace():
 
 def checkIntersection(point, dir, source):
 
-    reboundPoint = Point(501,501) #Punto considerado como infinito, se va a reemplazar
+    reboundPoint = Point(w+1,h+1) #Punto considerado como infinito, se va a reemplazar
 
     free = True
 
@@ -238,48 +224,47 @@ ref = np.array(im_file)
 
 #_____________________________________VARIABLES GLOBALES QUE SE PUEDEN CAMBIAR_______________________________________________________
 
-especularidad = False
+especularidad = True
 
 maxRebotes = 2 #Variable global que define la cantidad de rebotes permitidos por los rayos
 
 newRaysLimit = 5 #Variable que controla la cantidad de nuevos rays que se crean
 
 
-radioDeIlluminacion = 250
+radioDeIlluminacion = 1000
 
 
 #Posiciones de la luz
 
 
-sources = [ Point(96, 113),  #Cocina
+sourcesCocina = [ Point(96, 113) ] #Cocina
 
-            #Point(97, 268),  #MainRoom
+sourcesMainRoom = [ Point(97, 268),  #MainRoom
+                    Point(42, 468) ] #mainRoom
 
-            #Point(626, 39), #Hab1
+sourcesHab1 = [ Point(626, 39) ] #Hab1
 
-            #Point(42, 468), #mainRoom
+sourcesHabPeque = [ Point(236, 526) ] #HabPeque
 
-            #Point(236, 526), #HabPeque
+sourcesHab2 = [ Point(430, 442) ] #Hab2
 
-            #Point(430, 442) #Hab2
+fuentes = list()
 
-          ] 
+fuentes.append(sourcesCocina)
+fuentes.append(sourcesMainRoom)
+fuentes.append(sourcesHab1)
+fuentes.append(sourcesHabPeque)
+fuentes.append(sourcesHab2)
 
-
-#Tienen le siguiente orden: Cocina, Hab1, Mainroom, Mainroom, HabPeque, 
-
+#Tienen el siguiente orden: Cocina, Hab1, Mainroom, Mainroom, HabPeque, 
 
 light = np.array([1, 1, 0.75]) #Color de la luz
 #light = np.array([1, 1, 1])
 
-
-
-
 #___________________________________GEOMETRY_______________________________________________________
 
 
-segmentsKitchen = [ 
-                    
+segmentsKitchen = [
                     ([Point(51, 10), Point(227, 10)]),
                     ([Point(227, 10), Point(261, 46)]),
                     ([Point(261, 46), Point(264,94)]),
@@ -287,9 +272,7 @@ segmentsKitchen = [
                     ([Point(15, 46), Point(15,230)]),
                     ([Point(15, 230), Point(36,247)]),
                     ([Point(36, 247), Point(192,247)]),
-
                     ([Point(236, 237), Point(236,225)]),
-
                   ]
 
 segmentsHallway = [
@@ -302,7 +285,6 @@ segmentsHallway = [
 
 
 segmentsHabitacion1 = [
-
                         ([Point(459, 94), Point(459,46)]),
                         ([Point(459, 46), Point(495, 9)]),
                         ([Point(495, 9), Point(643, 9)]),
@@ -310,133 +292,79 @@ segmentsHabitacion1 = [
                         ([Point(679, 45), Point(679, 202)]),
                         ([Point(679, 202), Point(661, 225)]),
                         ([Point(661, 225), Point(513, 202)]),
-
                       ]
 
 
 segmentsHabitacionPeque = [
-
                             ([Point(292, 482), Point(292, 496)]),
-
                             ([Point(292, 496), Point(208, 496)]),
-
                             ([Point(208, 496), Point(208, 660)]),
-
                             ([Point(208, 660), Point(231, 682)]),
-
                             ([Point(231, 682), Point(354, 682)]),
-
                             ([Point(354, 682), Point(374, 660)]),
-
                             ([Point(374, 660), Point(374, 496)]),
-
                             ([Point(374, 496), Point(347, 496)]),
-
                             ([Point(347, 496), Point(347, 454)]),
-
-
                           ]
 
 segmentsMainRoom = [
-
                         ([Point(347, 454), Point(375, 454)]),
-
                         ([Point(375, 454), Point(375, 394)]),
-
                         ([Point(36, 247), Point(14,275)]),
-
                         ([Point(36, 247), Point(14,275)]),
-
                         ([Point(14, 275), Point(14, 602)]),
-
                         ([Point(14, 602), Point(36, 624)]),
-
                         ([Point(14, 602), Point(36, 624)]),
-
                         ([Point(36, 624), Point(97, 624)]),
-
                         ([Point(97, 624), Point(97, 676)]),
-
                         ([Point(97, 676), Point(149, 676)]),
-
                         ([Point(149, 676), Point(149, 627)]),
-
                         ([Point(149, 627), Point(176, 627)]),
-
                         ([Point(176, 627), Point(176, 482)]),
-
                         ([Point(176, 482), Point(292, 482)]),
-
                         ([Point(236, 225), Point(236,239)]), 
-
                         ([Point(236, 225), Point(236,239)]), 
-
                         ([Point(236, 239), Point(254,239)]),
-
                         ([Point(254, 239), Point(289,275)]), 
-
                         ([Point(289, 275), Point(289,323)]),
-
                         ([Point(289, 323), Point(320, 323)]),
-
                         ([Point(320, 323), Point(320, 275)])
-
-
                     ]
 
 
 segmentsHap2 = [
 
                         ([Point(320, 375), Point(357, 240)]),
-
                         ([Point(357, 240), Point(644, 240)]),
-
                         ([Point(644, 240), Point(678, 276)]),
-
                         ([Point(678, 276), Point(678, 516)]),
-
                         ([Point(678, 516), Point(660, 536)]),
-
                         ([Point(660, 536), Point(424, 536)]),
-
                         ([Point(424, 536), Point(404, 516)]),
-
                         ([Point(404, 516), Point(404, 426)]),
-
                         ([Point(404, 426), Point(377, 426)])
-
                ]    
 
 segments = segmentsKitchen + segmentsHallway + segmentsHabitacion1 + segmentsHabitacionPeque + segmentsMainRoom + segmentsHap2
 
- 
-
-#________________________________________________________________________________________________
-
-
-
-
 #_____________________________________THREADING__________________________________________________
 
-
-t = threading.Thread(target = raytrace ) # f being the function that tells how the ball should move
-t.setDaemon(True) # Alternatively, you can use "t.daemon = True"
-t.start()
+for fuente in fuentes:
+    print("Iniciando hilo")
+    t = threading.Thread(target = raytrace, args=(fuente,) ) # f being the function that tells how the ball should move
+    print("paso 2")
+    t.setDaemon(True) # Alternatively, you can use "t.daemon = True"
+    print("paso 3")
+    t.start()
+    print("Hilo iniciado con éxito")
 
 #________________________________________________________________________________________________
-
-
-
 
 #Lo agregué yo
 fondo="imagen_casa_691x691.jpg"
 img_fondo= pygame.image.load(fondo)
-
                 
 img_fondo = pygame.transform.scale(img_fondo,(h,w))
-        
-
-
 
 lightCircle = "Light Circle.png"
 i_lighCircle = pygame.image.load(lightCircle)
@@ -444,8 +372,6 @@ i_lighCircle = pygame.image.load(lightCircle)
 i_lighCircle = pygame.transform.scale(i_lighCircle,(20,20))     
         
 #Termina lo que agregué
-
-
 
 #________________________________________MAIN LOOP__________________________________________________
 

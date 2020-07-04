@@ -73,20 +73,29 @@ def pendienteLinea(a, b):
 def newDirection(point, dir, segPointA, segPointB):
 
 
+    #print("Segmentos: ", segPointA, segPointB, "PuntoDelSalto: ", point, "Dir: ", dir)
+
     if (segPointA.x == segPointB.x): #Recta paralela al eje y, cuando no es posible calcular una pendiente
 
-        if dir.x < 0: #Negativo
+        if dir.x < 0: 
+            #Viene por la izquierda
+            
+            randomPoint =  Point(random.uniform(point.x + 1, w), random.uniform(0, w))
+
+           # print("Punto agarrado (paralela y): ", randomPoint )
+
+            return ( randomPoint - point  ) 
+        
+
+        else: #Positivo, la x va en aumento
 
             #Viene por la derecha
 
-            return (  normalize(Point(random.uniform(point.x + 1, w), random.uniform(0, w)) - point)  ) 
+            randomPoint =  Point(random.uniform(0, point.x - 1 ), random.uniform(0,w))
 
-
-        else: 
-
-            #Pos
-            #Viene por la izquierda
-            return ( normalize(Point(random.uniform(0, point.x - 1 ), random.uniform(0,w)) - point) )
+            #print("Punto agarrado (paralela y): ", randomPoint)
+                        
+            return ( randomPoint - point ) 
 
 
 
@@ -101,13 +110,22 @@ def newDirection(point, dir, segPointA, segPointB):
 
             #Viene por arriba
 
-            return ( normalize(Point(random.uniform(0,w), random.uniform(0, point.y - 1 ))  - point ) )
+            randomPoint =   Point(random.uniform(0,w), random.uniform(0, point.y - 1 ))
+
+            #print("Punto agarrado (paralela x): ", randomPoint )
+
+            return ( randomPoint - point )
 
 
         else:
 
+
+            randomPoint =  Point(random.uniform(0,w), random.uniform(point.y + 1, w))
+
+            #print("Punto agarrado (paralela x): ", randomPoint )
+
             #Viene por abajo
-            return ( normalize(Point(random.uniform(0,w), random.uniform(point.y + 1, w)) - point) )   
+            return ( randomPoint - point)    
 
     else: #La recta no es ni vertical ni horizontal
 
@@ -129,8 +147,43 @@ def newDirection(point, dir, segPointA, segPointB):
 
 
 
-def rayCircleIntersection ( ori, dir, posC, r):
+def rayCircleIntersection ( ori, posC, r, sourcePos):
 
+
+    dx = sourcePos.x - ori.x
+
+    dy = sourcePos.y - ori.y
+
+    A = dx * dx + dy *dy
+    B = 2*(dx * (ori.x - posC.x) + dy * (ori.y - posC.y))
+    C = (ori.x - posC.x) * (ori.x - posC.x) + (ori.y - posC.y) * (ori.y - posC.y) - r**2
+
+    det = B * B -4 * A * C
+
+    if ( A <= 0.0000001) or (det < 0):
+        #Sin solu
+        return -1
+
+    elif (det == 0 ):
+
+        #Una solu    
+        t = -B / (2 * A)
+
+        return [Point(ori.x + t * dx, ori.y + t * dy)]
+
+
+    else: #Dos solus
+
+        t = (-B + math.sqrt(det)) / (2*A)
+
+        inter1 = Point(ori.x + t * dx, ori.y + t * dy)
+
+        t = (-B - math.sqrt(det)) / (2*A)
+
+        inter2 = Point(ori.x + t * dx, ori.y + t * dy)
+
+        #print(inter1, inter2)
+        return [inter1, inter2]
 
     v1 = posC - ori #Se crea un vector con la dirección del punto aleatorio hacia el centro del círculo
 
@@ -158,21 +211,21 @@ def movePoint(segPointA, segPointB, dir, point):
 
     if (segPointA.x == segPointB.x): #Recta paralela al eje y, cuando no es posible calcular una pendiente
 
-        if dir.x < 0: #Negativo
+        if dir.x > 0: #Pos
 
             #Viene por la derecha
 
-            point.x = point.x + 1.5
+            point.x = point.x - 1.5
 
             return point
 
 
         else: 
 
-            #Pos
+            #Nega
             #Viene por la izquierda
 
-            point.x = point.x - 1.5
+            point.x = point.x + 1.5
 
             return point
 
@@ -204,11 +257,68 @@ def movePoint(segPointA, segPointB, dir, point):
 
 
 
-def BDRF (point, dir):
+def especularity (dirOfTheRay, segPointA, segPointB): #Calcular la dirección de la especularidad
+
+    if (segPointA.x == segPointB.x): #Paralela a y
+
+        dirOfTheRay.y = -dirOfTheRay.y
+
+        return dirOfTheRay
+
+    else:
+
+        dirOfTheRay.x = -dirOfTheRay.x
+
+        return dirOfTheRay
 
 
-    cos_theta = 0
+#print( rayCircleIntersection( Point(-2,3), Point(2,6), 4, Point(5,10)) )
+
+
+#print( especularity(Point(1,-1), Point(-3,0), Point(3,0), Point(0,0))   )
 
 
 
+'''
 
+if (segPointA.x == segPointB.x): #Paralela a y
+
+        if dirOfTheRay.x < 0: #Por la derecha
+
+            vectorN = Point( w, point.y) - point
+
+        else: #Por la izquierda
+
+            vectorN = Point( 0, point.y) - point
+
+    else:
+
+        if dirOfTheRay.y < 0: #Por arriba
+
+            vectorN = Point(point.x, 0) - point
+
+        else:
+
+            vectorN = Point(point.x, 500) - point
+
+    vectorN = Point(1,0)
+
+    #vectorN = normalize(vectorN)
+
+    dirOfTheRay = normalize(dirOfTheRay)
+
+    dotProduct = vectorN.dot(dirOfTheRay) 
+
+    dotProduct = dotProduct * 2
+
+    auxVector = Point(vectorN.x * dotProduct, vectorN.y * dotProduct)
+
+    especularity =  dirOfTheRay - auxVector
+
+    angulo = np.arccos( cosAngle( especularity , vectorN, point) )
+
+    Oangulo = np.arccos( cosAngle( dirOfTheRay , vectorN, point) )
+
+    print (math.degrees(angulo),  math.degrees(Oangulo))
+
+'''
